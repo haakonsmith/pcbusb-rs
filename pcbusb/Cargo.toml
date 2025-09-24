@@ -1,0 +1,10 @@
+[package]
+name = "pcbusb"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+embedded-can = "0.4.1"
+nb = "1.1.0"
+nix = { version = "0.28", features = ["poll"] }
+pcbusb-sys = { path = "../pcbusb-sys" }
