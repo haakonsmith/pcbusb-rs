@@ -131,6 +131,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
+name = "mac-can-sys"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cc",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -175,18 +183,17 @@ name = "pcbusb"
 version = "0.1.0"
 dependencies = [
  "embedded-can",
+ "mac-can-sys",
  "nb",
  "nix",
- "pcbusb-sys",
+ "peak-can-sys",
 ]
 
 [[package]]
-name = "pcbusb-sys"
-version = "0.1.0"
-dependencies = [
- "bindgen",
- "cc",
-]
+name = "peak-can-sys"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "abdc770c146d436e8eae98775b740e9f19df2ad892fd99405196866aae500c29"
 
 [[package]]
 name = "prettyplease"

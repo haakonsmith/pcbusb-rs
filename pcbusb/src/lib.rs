@@ -11,7 +11,11 @@ use std::{
     ptr,
 };
 
-use pcbusb_sys::*;
+#[cfg(target_os = "macos")]
+use mac_can_sys::*;
+
+#[cfg(not(target_os = "macos"))]
+use peak_can_sys::*;
 
 #[cfg(unix)]
 use nix::sys::select::{FdSet, select};
@@ -57,6 +61,7 @@ impl Error {
     fn new(error_code: u32) -> Self {
         unsafe {
             let raw_error_msg = CString::from_vec_unchecked(Vec::with_capacity(256)).into_raw();
+
             CAN_GetErrorText(error_code, 0, raw_error_msg);
             Self(String::from_utf8_unchecked(
                 CString::from_raw(raw_error_msg).into_bytes(),
@@ -87,24 +92,41 @@ impl std::error::Error for Error {}
 
 impl embedded_can::Error for Error {
     fn kind(&self) -> embedded_can::ErrorKind {
+        // TODO update to proper error handling
         embedded_can::ErrorKind::Other
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u16)]
+pub enum Baudrate {
+    Baud1m = PCAN_BAUD_1M as u16,
+    Baud800k = PCAN_BAUD_800K as u16,
+    Baud500k = PCAN_BAUD_500K as u16,
+    Baud250k = PCAN_BAUD_250K as u16,
+    Baud125k = PCAN_BAUD_125K as u16,
+    Baud100k = PCAN_BAUD_100K as u16,
+    Baud95k = PCAN_BAUD_95K as u16,
+    Baud83k = PCAN_BAUD_83K as u16,
+    Baud50k = PCAN_BAUD_50K as u16,
+    Baud47k = PCAN_BAUD_47K as u16,
+    Baud33k = PCAN_BAUD_33K as u16,
+    Baud20k = PCAN_BAUD_20K as u16,
+    Baud10k = PCAN_BAUD_10K as u16,
+    Baud5k = PCAN_BAUD_5K as u16,
 }
 
 pub struct Interface {
     channel: u16,
     event_handle: HANDLE,
+    baudrate: Baudrate,
 }
 
 impl Interface {
-    pub fn init() -> Result<Self, Error> {
+    pub fn init(baudrate: Baudrate) -> Result<Self, Error> {
         let pcan_channel = PCAN_USBBUS1 as u16;
 
-        // When running with 125kbps the STM32 bootloader sets the acknowledge bit early.
-        // Choose a nominal sample point of 75% to prevent form errors in the CRC delimiter.
-        // Value calculated using http://www.bittiming.can-wiki.info/ (NXP SJA1000)
-        const BAUDRATE_CONFIG: u16 = 0x033A;
-        let result = unsafe { CAN_Initialize(pcan_channel, BAUDRATE_CONFIG, 0, 0, 0) };
+        let result = unsafe { CAN_Initialize(pcan_channel, baudrate as u16, 0, 0, 0) };
         if result != PCAN_ERROR_OK {
             return Err(Error::new(result));
         }
@@ -136,6 +158,7 @@ impl Interface {
         let mut this = Self {
             channel: pcan_channel,
             event_handle,
+            baudrate,
         };
 
         // Drain all messages that were received since `init()` has been called.

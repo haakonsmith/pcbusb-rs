@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize the CAN interface
     println!("Initializing CAN interface...");
-    let mut can_interface = Interface::init()?;
+    let mut can_interface = Interface::init(pcbusb::Baudrate::Baud500k)?;
     println!("CAN interface initialized successfully!");
 
     // Add a filter to accept all messages (optional)

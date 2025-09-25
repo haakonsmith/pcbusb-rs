@@ -7,4 +7,10 @@ edition = "2024"
 embedded-can = "0.4.1"
 nb = "1.1.0"
 nix = { version = "0.28", features = ["poll"] }
-pcbusb-sys = { path = "../pcbusb-sys" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+mac-can-sys = { path = "../mac-can-sys" }
+
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+peak-can-sys = "0.1"

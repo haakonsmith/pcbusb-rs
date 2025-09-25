@@ -2,7 +2,7 @@
 
 Ergonomic wrapper for the MacCAN PCBUSB API for macOS. This library has been converted from Windows-specific code to work natively on macOS using POSIX APIs instead of Windows synchronization primitives.
 
-See `README.md` in the `pcbusb-sys` folder for more details on the raw bindings.
+See `README.md` in the `mac-can-sys` folder for more details on the raw bindings.
 
 This aims to mimic https://github.com/timokroeger/pcan-basic-rs
 
@@ -44,22 +44,22 @@ use embedded_can::blocking::Can as BlockingCan;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize the CAN interface
     let mut can_interface = Interface::init()?;
-    
+
     // Set up message filtering
     let filter = Filter::accept_all();
     can_interface.add_filter(&filter)?;
-    
+
     // Create and send a test message
     let test_id = StandardId::new(0x123).unwrap();
     let test_data = [0x01, 0x02, 0x03, 0x04];
     let test_frame = Frame::new(test_id, &test_data).unwrap();
-    
+
     BlockingCan::transmit(&mut can_interface, &test_frame)?;
-    
+
     // Receive messages (blocking)
     let received_frame = BlockingCan::receive(&mut can_interface)?;
     println!("Received: {:?}", received_frame.data());
-    
+
     Ok(())
 }
 ```
