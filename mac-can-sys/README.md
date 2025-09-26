@@ -6,7 +6,7 @@ This crate provides unsafe, low-level bindings to the MacCAN PCBUSB C library, w
 
 ## Overview
 
-`pcbusb-sys` contains the raw FFI bindings generated from the MacCAN PCBUSB headers. These bindings are automatically generated using `bindgen` and provide direct access to the underlying C API.
+`mac-can-sys` contains the raw FFI bindings generated from the MacCAN PCBUSB headers. These bindings are automatically generated using `bindgen` and provide direct access to the underlying C API.
 
 **Note**: These are raw, unsafe bindings. For a safe, ergonomic Rust API, use the parent `pcbusb` crate instead.
 

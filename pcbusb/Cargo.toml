@@ -6,11 +6,16 @@ edition = "2024"
 [dependencies]
 embedded-can = "0.4.1"
 nb = "1.1.0"
+
+[target.'cfg(unix)'.dependencies]
 nix = { version = "0.28", features = ["poll"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 mac-can-sys = { path = "../mac-can-sys" }
 
+[target.'cfg(target_os = "windows")'.dependencies]
+winapi = { version = "0.3.9", features = ["winbase", "synchapi"] }
+
 
 [target.'cfg(not(target_os = "macos"))'.dependencies]
-peak-can-sys = "0.1"
+peak-can-sys = "0.1.2"

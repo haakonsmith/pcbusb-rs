@@ -1,6 +1,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+#[cfg(target_os = "macos")]
 fn main() {
     let dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     println!(
@@ -34,3 +35,6 @@ fn main() {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
 }
+
+#[cfg(not(target_os = "macos"))]
+fn main() {}
