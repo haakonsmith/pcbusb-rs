@@ -20,7 +20,7 @@ use std::os::unix::io::{AsRawFd, BorrowedFd, RawFd};
 #[cfg(windows)]
 use winapi::{
     shared::minwindef::FALSE,
-    um::{synchapi, winbase::INFINITE, winnt::HANDLE},
+    um::{synchapi, winbase::INFINITE, winnt},
 };
 
 /// A wrapper around a Windows HANDLE for event notification.
@@ -28,7 +28,7 @@ use winapi::{
 #[cfg(windows)]
 #[derive(Debug)]
 pub struct EventHandle {
-    handle: HANDLE,
+    handle: winnt::HANDLE,
 }
 
 #[cfg(windows)]
@@ -37,12 +37,12 @@ unsafe impl Send for EventHandle {}
 #[cfg(windows)]
 impl EventHandle {
     /// Create a new EventHandle from a raw HANDLE
-    fn from_handle(handle: HANDLE) -> Self {
+    fn from_handle(handle: winnt::HANDLE) -> Self {
         Self { handle }
     }
 
     /// Get the raw HANDLE
-    fn as_handle(&self) -> HANDLE {
+    fn as_handle(&self) -> winnt::HANDLE {
         self.handle
     }
 }
@@ -77,6 +77,9 @@ impl AsRawFd for EventHandle {
 }
 
 #[cfg(unix)]
+type HANDLE = EventHandle;
+
+#[cfg(windows)]
 type HANDLE = EventHandle;
 
 pub struct Interface {
