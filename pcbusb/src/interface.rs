@@ -97,15 +97,15 @@ impl Interface {
             return Err(Error::new(result));
         }
 
-        let mut parameter_off = PCAN_PARAMETER_OFF;
-        unsafe {
-            CAN_SetValue(
-                pcan_channel,
-                PCAN_ALLOW_STATUS_FRAMES as u8,
-                &mut parameter_off as *mut _ as *mut c_void,
-                mem::size_of_val(&parameter_off) as u32,
-            );
-        }
+        // let mut parameter_off = PCAN_PARAMETER_OFF;
+        // unsafe {
+        //     CAN_SetValue(
+        //         pcan_channel,
+        //         PCAN_ALLOW_STATUS_FRAMES as u8,
+        //         &mut parameter_off as *mut _ as *mut c_void,
+        //         mem::size_of_val(&parameter_off) as u32,
+        //     );
+        // }
 
         #[cfg(unix)]
         let mut raw_fd: RawFd = 0;
@@ -118,17 +118,25 @@ impl Interface {
             return Err(Error::new(result));
         }
 
-        let result = unsafe {
-            CAN_GetValue(
+        #[cfg(windows)]
+        unsafe {
+            CAN_SetValue(
                 pcan_channel,
                 PCAN_RECEIVE_EVENT as u8,
                 &mut raw_fd as *mut _ as *mut c_void,
                 mem::size_of_val(&raw_fd) as u32,
             )
         };
-        if result != PCAN_ERROR_OK {
-            return Err(Error::new(result));
-        }
+
+        // #[cfg(unix)]
+        // unsafe {
+        //     CAN_GetValue(
+        //         pcan_channel,
+        //         PCAN_RECEIVE_EVENT as u8,
+        //         &mut raw_fd as *mut _ as *mut c_void,
+        //         mem::size_of_val(&raw_fd) as u32,
+        //     )
+        // };
 
         #[cfg(unix)]
         let event_handle = EventHandle::from_raw_fd(raw_fd);
@@ -213,30 +221,13 @@ impl embedded_can::blocking::Can for Interface {
     }
 
     fn receive(&mut self) -> Result<Frame, Error> {
-        match self.receive_internal() {
-            Err(nb::Error::WouldBlock) => {
-                #[cfg(unix)]
-                let mut readfds = FdSet::new();
-                #[cfg(unix)]
-                readfds.insert(self.event_handle.as_borrowed_fd());
-
-                // Block indefinitely until the file descriptor is ready
-                #[cfg(unix)]
-                select(None, Some(&mut readfds), None, None, None)?;
-
-                #[cfg(windows)]
-                unsafe {
-                    synchapi::WaitForSingleObject(self.event_handle.as_handle(), INFINITE)
-                };
-
-                match self.receive_internal() {
-                    Ok(frame) => Ok(frame),
-                    Err(nb::Error::Other(err)) => Err(err),
-                    _ => panic!("Receive queue should not be empty!"),
-                }
+        loop {
+            match self.receive_internal() {
+                Ok(frame) => break Ok(frame),
+                Err(nb::Error::Other(err)) => break Err(err),
+                Err(nb::Error::WouldBlock) => continue,
+                _ => panic!("Receive queue should not be empty!"),
             }
-            Ok(frame) => Ok(frame),
-            Err(nb::Error::Other(err)) => Err(err),
         }
     }
 }
