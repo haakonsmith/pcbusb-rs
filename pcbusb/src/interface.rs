@@ -23,6 +23,30 @@ use winapi::{
     um::{synchapi, winbase::INFINITE, winnt::HANDLE},
 };
 
+/// A wrapper around a Windows HANDLE for event notification.
+/// The HANDLE is managed by the PCAN library and doesn't require manual cleanup.
+#[cfg(windows)]
+#[derive(Debug)]
+pub struct EventHandle {
+    handle: HANDLE,
+}
+
+#[cfg(windows)]
+unsafe impl Send for EventHandle {}
+
+#[cfg(windows)]
+impl EventHandle {
+    /// Create a new EventHandle from a raw HANDLE
+    fn from_handle(handle: HANDLE) -> Self {
+        Self { handle }
+    }
+
+    /// Get the raw HANDLE
+    fn as_handle(&self) -> HANDLE {
+        self.handle
+    }
+}
+
 /// A wrapper around a file descriptor provided by the MacCAN library
 /// for event notification. The file descriptor is managed by the library
 /// and doesn't require manual cleanup.
@@ -106,7 +130,7 @@ impl Interface {
         #[cfg(unix)]
         let event_handle = EventHandle::from_raw_fd(raw_fd);
         #[cfg(windows)]
-        let event_handle = raw_fd;
+        let event_handle = EventHandle::from_handle(raw_fd);
 
         let mut this = Self {
             channel: pcan_channel,
@@ -199,7 +223,7 @@ impl embedded_can::blocking::Can for Interface {
 
                 #[cfg(windows)]
                 unsafe {
-                    synchapi::WaitForSingleObject(self.event_handle, INFINITE)
+                    synchapi::WaitForSingleObject(self.event_handle.as_handle(), INFINITE)
                 };
 
                 match self.receive_internal() {
