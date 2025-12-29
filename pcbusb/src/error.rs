@@ -25,13 +25,6 @@ impl From<std::io::Error> for Error {
     }
 }
 
-#[cfg(unix)]
-impl From<nix::Error> for Error {
-    fn from(err: nix::Error) -> Self {
-        Self(format!("System error: {}", err))
-    }
-}
-
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)

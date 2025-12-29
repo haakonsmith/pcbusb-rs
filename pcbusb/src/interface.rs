@@ -1,8 +1,8 @@
 use crate::sys::{
     CAN_GetValue, CAN_Initialize, CAN_Read, CAN_SetValue, CAN_Uninitialize, CAN_Write,
-    PCAN_ACCEPTANCE_FILTER_11BIT, PCAN_ACCEPTANCE_FILTER_29BIT, PCAN_ALLOW_STATUS_FRAMES,
-    PCAN_ERROR_OK, PCAN_ERROR_QRCVEMPTY, PCAN_FILTER_CLOSE, PCAN_FILTER_CUSTOM, PCAN_FILTER_OPEN,
-    PCAN_MESSAGE_FILTER, PCAN_PARAMETER_OFF, PCAN_RECEIVE_EVENT, PCAN_USBBUS1, TPCANMsg,
+    PCAN_ACCEPTANCE_FILTER_11BIT, PCAN_ACCEPTANCE_FILTER_29BIT, PCAN_ERROR_OK,
+    PCAN_ERROR_QRCVEMPTY, PCAN_FILTER_CLOSE, PCAN_FILTER_CUSTOM, PCAN_FILTER_OPEN,
+    PCAN_MESSAGE_FILTER, PCAN_USBBUS1, TPCANMsg,
 };
 use crate::{Baudrate, Error, Filter, Frame};
 
@@ -13,9 +13,7 @@ use std::{
 };
 
 #[cfg(unix)]
-use nix::sys::select::{FdSet, select};
-#[cfg(unix)]
-use std::os::unix::io::{AsRawFd, BorrowedFd, RawFd};
+use std::os::unix::io::{AsRawFd, RawFd};
 
 #[cfg(windows)]
 use winapi::{
@@ -62,11 +60,6 @@ impl EventHandle {
     fn from_raw_fd(fd: RawFd) -> Self {
         Self { fd }
     }
-
-    /// Get a borrowed file descriptor for use with system calls
-    fn as_borrowed_fd(&self) -> BorrowedFd<'_> {
-        unsafe { BorrowedFd::borrow_raw(self.fd) }
-    }
 }
 
 #[cfg(unix)]
@@ -84,6 +77,8 @@ type HANDLE = EventHandle;
 
 pub struct Interface {
     channel: u16,
+    // TODO might come back to this later
+    #[allow(unused)]
     event_handle: HANDLE,
     _baudrate: Baudrate,
 }
@@ -108,7 +103,7 @@ impl Interface {
         // }
 
         #[cfg(unix)]
-        let mut raw_fd: RawFd = 0;
+        let raw_fd: RawFd = 0;
 
         #[cfg(windows)]
         let mut raw_fd =
@@ -122,7 +117,7 @@ impl Interface {
         unsafe {
             CAN_SetValue(
                 pcan_channel,
-                PCAN_RECEIVE_EVENT as u8,
+                crate::sys::PCAN_RECEIVE_EVENT as u8,
                 &mut raw_fd as *mut _ as *mut c_void,
                 mem::size_of_val(&raw_fd) as u32,
             )
@@ -226,7 +221,6 @@ impl embedded_can::blocking::Can for Interface {
                 Ok(frame) => break Ok(frame),
                 Err(nb::Error::Other(err)) => break Err(err),
                 Err(nb::Error::WouldBlock) => continue,
-                _ => panic!("Receive queue should not be empty!"),
             }
         }
     }
