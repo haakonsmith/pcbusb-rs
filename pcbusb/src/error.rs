@@ -1,5 +1,5 @@
 use core::fmt;
-use std::ffi::CString;
+use std::ffi::{CStr, c_char};
 
 use crate::sys::CAN_GetErrorText;
 
@@ -8,13 +8,11 @@ pub struct Error(pub(crate) String);
 
 impl Error {
     pub(crate) fn new(error_code: u32) -> Self {
+        let mut buffer = vec![0u8; 256];
         unsafe {
-            let raw_error_msg = CString::from_vec_unchecked(Vec::with_capacity(256)).into_raw();
-
-            CAN_GetErrorText(error_code, 0, raw_error_msg);
-            Self(String::from_utf8_unchecked(
-                CString::from_raw(raw_error_msg).into_bytes(),
-            ))
+            CAN_GetErrorText(error_code, 0, buffer.as_mut_ptr() as *mut c_char);
+            let msg = CStr::from_ptr(buffer.as_ptr() as *const c_char);
+            Self(msg.to_string_lossy().into_owned())
         }
     }
 }
