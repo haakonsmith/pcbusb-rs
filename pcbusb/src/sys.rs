@@ -1,5 +1,14 @@
+// Bindings to MacCAN's PCBUSB.h, committed so that building needs neither the
+// header nor libclang. Regenerate with:
+//
+// bindgen /usr/local/include/PCBUSB.h --allowlist-file '.*PCBUSB\.h' \
+//     --rust-edition 2024 --rust-target 1.85 -o pcbusb/src/sys/mac.rs \
+//     -- --sysroot="$(xcrun --show-sdk-path)"
 #[cfg(target_os = "macos")]
-pub use mac_can_sys::*;
+#[allow(non_upper_case_globals, non_camel_case_types, non_snake_case, dead_code)]
+mod mac;
+#[cfg(target_os = "macos")]
+pub use mac::*;
 
 #[cfg(not(target_os = "macos"))]
 mod peak_compat {

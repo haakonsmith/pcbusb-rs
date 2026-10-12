@@ -2,7 +2,7 @@
 
 Ergonomic wrapper for the MacCAN PCBUSB API for macOS. This library has been converted from Windows-specific code to work natively on macOS using POSIX APIs instead of Windows synchronization primitives.
 
-See `README.md` in the `mac-can-sys` folder for more details on the raw bindings.
+The raw bindings to `PCBUSB.h` are committed in `pcbusb/src/sys/mac.rs`, so building needs neither the header nor libclang. `pcbusb/src/sys.rs` has the command that regenerates them.
 
 This aims to mimic https://github.com/timokroeger/pcan-basic-rs
 
@@ -19,7 +19,7 @@ This aims to mimic https://github.com/timokroeger/pcan-basic-rs
 ## Requirements
 
 - macOS (this library is macOS-specific)
-- MacCAN PCBUSB library installed
+- MacCAN PCBUSB library installed in `/usr/local/lib`
 - PEAK-System PCAN-USB compatible hardware
 
 ## Usage
