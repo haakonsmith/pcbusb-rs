@@ -30,6 +30,8 @@ mod peak_compat {
     // Constants - convert from u32 to match expected types
     pub const PCAN_ERROR_OK: u32 = peak_can_sys::PEAK_ERROR_OK;
     pub const PCAN_ERROR_QRCVEMPTY: u32 = peak_can_sys::PEAK_ERROR_QRCVEMPTY;
+    pub const PCAN_ERROR_BUSOFF: u32 = peak_can_sys::PEAK_ERROR_BUSOFF;
+    pub const PCAN_ERROR_ANYBUSERR: u32 = peak_can_sys::PEAK_ERROR_ANYBUSERR;
 
     pub const PCAN_BAUD_1M: u32 = peak_can_sys::PEAK_BAUD_1M as u32;
     pub const PCAN_BAUD_5K: u32 = peak_can_sys::PEAK_BAUD_5K as u32;
@@ -58,6 +60,8 @@ mod peak_compat {
     pub const PCAN_MESSAGE_FILTER: u32 = peak_can_sys::PEAK_MESSAGE_FILTER as u32;
     pub const PCAN_MESSAGE_RTR: u8 = peak_can_sys::PEAK_MESSAGE_RTR as u8;
     pub const PCAN_MESSAGE_STANDARD: u8 = peak_can_sys::PEAK_MESSAGE_STANDARD as u8;
+    pub const PCAN_MESSAGE_STATUS: u8 = peak_can_sys::PEAK_MESSAGE_STATUS as u8;
+    pub const PCAN_MESSAGE_ERRFRAME: u8 = peak_can_sys::PEAK_MESSAGE_ERRFRAME as u8;
 
     pub const PCAN_PARAMETER_OFF: u32 = peak_can_sys::PEAK_PARAMETER_OFF as u32;
     pub const PCAN_RECEIVE_EVENT: u32 = peak_can_sys::PEAK_RECEIVE_EVENT as u32;

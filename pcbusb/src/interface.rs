@@ -1,8 +1,9 @@
 use crate::sys::{
     CAN_GetValue, CAN_Initialize, CAN_Read, CAN_SetValue, CAN_Uninitialize, CAN_Write,
-    PCAN_ACCEPTANCE_FILTER_11BIT, PCAN_ACCEPTANCE_FILTER_29BIT, PCAN_ERROR_OK,
-    PCAN_ERROR_QRCVEMPTY, PCAN_FILTER_CLOSE, PCAN_FILTER_CUSTOM, PCAN_FILTER_OPEN,
-    PCAN_MESSAGE_FILTER, PCAN_USBBUS1, TPCANMsg,
+    PCAN_ACCEPTANCE_FILTER_11BIT, PCAN_ACCEPTANCE_FILTER_29BIT, PCAN_ERROR_ANYBUSERR,
+    PCAN_ERROR_BUSOFF, PCAN_ERROR_OK, PCAN_ERROR_QRCVEMPTY, PCAN_FILTER_CLOSE, PCAN_FILTER_CUSTOM,
+    PCAN_FILTER_OPEN, PCAN_MESSAGE_ERRFRAME, PCAN_MESSAGE_FILTER, PCAN_MESSAGE_STATUS,
+    PCAN_USBBUS1, TPCANMsg,
 };
 use crate::{Baudrate, Error, Filter, Frame};
 
@@ -175,16 +176,28 @@ impl Interface {
 
     fn receive_internal(&mut self) -> nb::Result<Frame, Error> {
         let mut msg = MaybeUninit::<TPCANMsg>::uninit();
-        let (result, msg) = unsafe {
-            (
-                CAN_Read(self.channel, msg.as_mut_ptr(), ptr::null_mut()),
-                msg.assume_init(),
-            )
-        };
+        let result = unsafe { CAN_Read(self.channel, msg.as_mut_ptr(), ptr::null_mut()) };
 
-        match result {
+        // A read returns the bus status along with what it read, e.g. PCAN_ERROR_BUSLIGHT on every
+        // read while an error counter is past that limit, so the status bits don't mean the read
+        // failed
+        match result & !PCAN_ERROR_ANYBUSERR {
             PCAN_ERROR_QRCVEMPTY => Err(nb::Error::WouldBlock),
-            PCAN_ERROR_OK => Ok(Frame(msg)),
+            PCAN_ERROR_OK => {
+                // SAFETY: the read succeeded, so it filled in the message
+                let msg = unsafe { msg.assume_init() };
+                let not_a_frame = (PCAN_MESSAGE_STATUS | PCAN_MESSAGE_ERRFRAME) as u8;
+
+                if msg.MSGTYPE & not_a_frame == 0 {
+                    Ok(Frame(msg))
+                } else if result & PCAN_ERROR_BUSOFF != 0 {
+                    // Nothing more arrives until the bus is reset
+                    Err(nb::Error::Other(Error::new(result)))
+                } else {
+                    // The bus status changing, or an error frame
+                    Err(nb::Error::WouldBlock)
+                }
+            }
             _ => Err(nb::Error::Other(Error::new(result))),
         }
     }
