@@ -24,8 +24,9 @@ mod peak_compat {
     // Type aliases to match macOS API expectations
     pub type TPCANStatus = u32;
 
-    // Re-export the message type with the expected name
+    // Re-export the message and timestamp types with the expected names
     pub use peak_can_sys::CANTPMsg as TPCANMsg;
+    pub use peak_can_sys::CANTPTimestamp as TPCANTimestamp;
 
     // Constants - convert from u32 to match expected types
     pub const PCAN_ERROR_OK: u32 = peak_can_sys::PEAK_ERROR_OK;
@@ -63,7 +64,9 @@ mod peak_compat {
     pub const PCAN_MESSAGE_STATUS: u8 = peak_can_sys::PEAK_MESSAGE_STATUS as u8;
     pub const PCAN_MESSAGE_ERRFRAME: u8 = peak_can_sys::PEAK_MESSAGE_ERRFRAME as u8;
 
+    pub const PCAN_LISTEN_ONLY: u32 = peak_can_sys::PEAK_LISTEN_ONLY as u32;
     pub const PCAN_PARAMETER_OFF: u32 = peak_can_sys::PEAK_PARAMETER_OFF as u32;
+    pub const PCAN_PARAMETER_ON: u32 = peak_can_sys::PEAK_PARAMETER_ON as u32;
     pub const PCAN_RECEIVE_EVENT: u32 = peak_can_sys::PEAK_RECEIVE_EVENT as u32;
     pub const PCAN_USBBUS1: u16 = peak_can_sys::PEAK_USBBUS1 as u16;
 
@@ -108,11 +111,7 @@ mod peak_compat {
         result as u32
     }
 
-    pub unsafe fn CAN_Read(
-        channel: u16,
-        msg: *mut TPCANMsg,
-        timestamp: *mut peak_can_sys::CANTPTimestamp,
-    ) -> u32 {
+    pub unsafe fn CAN_Read(channel: u16, msg: *mut TPCANMsg, timestamp: *mut TPCANTimestamp) -> u32 {
         let result = unsafe { peak_can_sys::CAN_Read(channel, msg, timestamp) };
         result as u32
     }

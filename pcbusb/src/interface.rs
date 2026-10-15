@@ -2,8 +2,8 @@ use crate::sys::{
     CAN_GetValue, CAN_Initialize, CAN_Read, CAN_SetValue, CAN_Uninitialize, CAN_Write,
     PCAN_ACCEPTANCE_FILTER_11BIT, PCAN_ACCEPTANCE_FILTER_29BIT, PCAN_ERROR_ANYBUSERR,
     PCAN_ERROR_BUSOFF, PCAN_ERROR_OK, PCAN_ERROR_QRCVEMPTY, PCAN_FILTER_CLOSE, PCAN_FILTER_CUSTOM,
-    PCAN_FILTER_OPEN, PCAN_MESSAGE_ERRFRAME, PCAN_MESSAGE_FILTER, PCAN_MESSAGE_STATUS,
-    PCAN_USBBUS1, TPCANMsg,
+    PCAN_FILTER_OPEN, PCAN_LISTEN_ONLY, PCAN_MESSAGE_ERRFRAME, PCAN_MESSAGE_FILTER,
+    PCAN_MESSAGE_STATUS, PCAN_PARAMETER_ON, PCAN_USBBUS1, TPCANMsg, TPCANTimestamp,
 };
 use crate::{Baudrate, Error, Filter, Frame};
 
@@ -11,6 +11,7 @@ use std::{
     ffi::c_void,
     mem::{self, MaybeUninit},
     ptr,
+    time::Duration,
 };
 
 #[cfg(unix)]
@@ -86,7 +87,34 @@ pub struct Interface {
 
 impl Interface {
     pub fn init(baudrate: Baudrate) -> Result<Self, Error> {
+        Self::open(baudrate, false)
+    }
+
+    /// Opens the interface without taking part in the bus: it neither acknowledges frames nor
+    /// sends error frames, so it can watch a bus, even at the wrong bitrate, without disturbing
+    /// it. Frames written are not sent.
+    pub fn init_listen_only(baudrate: Baudrate) -> Result<Self, Error> {
+        Self::open(baudrate, true)
+    }
+
+    fn open(baudrate: Baudrate, listen_only: bool) -> Result<Self, Error> {
         let pcan_channel = PCAN_USBBUS1 as u16;
+
+        // Before initialising, so the channel never takes part in the bus
+        if listen_only {
+            let mut on = PCAN_PARAMETER_ON;
+            let result = unsafe {
+                CAN_SetValue(
+                    pcan_channel,
+                    PCAN_LISTEN_ONLY as u8,
+                    &mut on as *mut _ as *mut c_void,
+                    mem::size_of_val(&on) as u32,
+                )
+            };
+            if result != PCAN_ERROR_OK {
+                return Err(Error::new(result));
+            }
+        }
 
         let result = unsafe { CAN_Initialize(pcan_channel, baudrate as u16, 0, 0, 0) };
         if result != PCAN_ERROR_OK {
@@ -175,8 +203,13 @@ impl Interface {
     }
 
     fn receive_internal(&mut self) -> nb::Result<Frame, Error> {
+        self.read(ptr::null_mut())
+    }
+
+    /// Reads the next frame, and fills in `timestamp` if it isn't null
+    fn read(&mut self, timestamp: *mut TPCANTimestamp) -> nb::Result<Frame, Error> {
         let mut msg = MaybeUninit::<TPCANMsg>::uninit();
-        let result = unsafe { CAN_Read(self.channel, msg.as_mut_ptr(), ptr::null_mut()) };
+        let result = unsafe { CAN_Read(self.channel, msg.as_mut_ptr(), timestamp) };
 
         // A read returns the bus status along with what it read, e.g. PCAN_ERROR_BUSLIGHT on every
         // read while an error counter is past that limit, so the status bits don't mean the read
@@ -200,6 +233,24 @@ impl Interface {
             }
             _ => Err(nb::Error::Other(Error::new(result))),
         }
+    }
+}
+
+impl Interface {
+    /// Receives a frame as [`embedded_can::nb::Can::receive`] does, with when the adapter received
+    /// it: microseconds by its own clock, which starts when it is plugged in. Two frames' times
+    /// are as far apart as they were on the bus, without the delays of USB and the host.
+    pub fn receive_timestamped(&mut self) -> nb::Result<(Frame, Duration), Error> {
+        let mut timestamp = MaybeUninit::<TPCANTimestamp>::uninit();
+        let frame = self.read(timestamp.as_mut_ptr())?;
+        // SAFETY: the read returned a frame, so it filled in the timestamp too
+        let timestamp = unsafe { timestamp.assume_init() };
+
+        // As PCBUSB.h has it: micros + 1000 * millis + 0x100000000 * 1000 * millis_overflow
+        let millis = u64::from(timestamp.millis) + (u64::from(timestamp.millis_overflow) << 32);
+        let micros = 1000 * millis + u64::from(timestamp.micros);
+
+        Ok((frame, Duration::from_micros(micros)))
     }
 }
 
