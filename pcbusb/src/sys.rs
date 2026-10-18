@@ -5,7 +5,12 @@
 //     --rust-edition 2024 --rust-target 1.85 -o pcbusb/src/sys/mac.rs \
 //     -- --sysroot="$(xcrun --show-sdk-path)"
 #[cfg(target_os = "macos")]
-#[allow(non_upper_case_globals, non_camel_case_types, non_snake_case, dead_code)]
+#[allow(
+    non_upper_case_globals,
+    non_camel_case_types,
+    non_snake_case,
+    dead_code
+)]
 mod mac;
 #[cfg(target_os = "macos")]
 pub use mac::*;
@@ -111,7 +116,11 @@ mod peak_compat {
         result as u32
     }
 
-    pub unsafe fn CAN_Read(channel: u16, msg: *mut TPCANMsg, timestamp: *mut TPCANTimestamp) -> u32 {
+    pub unsafe fn CAN_Read(
+        channel: u16,
+        msg: *mut TPCANMsg,
+        timestamp: *mut TPCANTimestamp,
+    ) -> u32 {
         let result = unsafe { peak_can_sys::CAN_Read(channel, msg, timestamp) };
         result as u32
     }

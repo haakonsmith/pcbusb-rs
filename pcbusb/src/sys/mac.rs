@@ -485,7 +485,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " @brief       Configures the reception filter.\n\n  @remarks     The message filter will be expanded with every call to  this function.\n               If it is desired to reset the filter, please use the CAN_SetValue function.\n\n  @param[in]   Channel    The handle of a PCAN Channel.\n  @param[in]   FromID     The lowest CAN ID to be received.\n  @param[in]   ToID       The highest CAN ID to be received.\n  @param[in]   Mode       Message type, Standard (11-bit identifier) or Extended (29-bit identifier).\n\n  @returns     A TPCANStatus error code."]
     pub fn CAN_FilterMessages(Channel: UInt16, FromID: UInt32, ToID: UInt32, Mode: UInt8)
-        -> UInt32;
+    -> UInt32;
 }
 unsafe extern "C" {
     #[doc = " @brief       Retrieves a PCAN Channel value.\n\n  @remarks     Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.\n               If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned.\n\n  @param[in]   Channel       The handle of a PCAN Channel.\n  @param[in]   Parameter     The TPCANParameter parameter to get.\n  @param[out]  Buffer        Buffer for the parameter value.\n  @param[in]   BufferLength  Size in bytes of the buffer.\n\n  @returns     A TPCANStatus error code."]
