@@ -5,6 +5,10 @@ use crate::sys::*;
 pub enum Baudrate {
     Baud1m = PCAN_BAUD_1M as u16,
     Baud800k = PCAN_BAUD_800K as u16,
+    /// 666,666.67 bit/s, which PCAN-Basic has no constant for: the BTR0/BTR1 code of 12 time
+    /// quanta of 125 ns (the 8 MHz clock its codes are for, at prescaler 1), sampled at 10 of them,
+    /// 83.3%, with a jump width of 1. Some transmission control units' plant mode runs at it
+    Baud666k = 0x0018,
     Baud500k = PCAN_BAUD_500K as u16,
     Baud250k = PCAN_BAUD_250K as u16,
     Baud125k = PCAN_BAUD_125K as u16,
