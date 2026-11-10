@@ -1,7 +1,14 @@
 [package]
 name = "pcbusb"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
+description = "PEAK PCAN-USB adapters through embedded-can: MacCAN PCBUSB on macOS, PCAN-Basic elsewhere"
+keywords = ["can", "pcan", "peak", "maccan", "embedded-can"]
+categories = ["hardware-support"]
+repository = "https://github.com/haakonsmith/pcbusb-rs"
+readme = "../README.md"
+license = "MIT"
+publish = ["m2eng"]
 
 [dependencies]
 embedded-can = "0.4.1"
